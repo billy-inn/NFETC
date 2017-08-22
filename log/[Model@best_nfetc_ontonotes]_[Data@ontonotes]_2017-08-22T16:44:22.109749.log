@@ -1,5 +1,0 @@
-[2017-08-22 16:44:22,119] INFO: tpe_transform took 0.000631 seconds
-[2017-08-22 16:44:22,119] INFO: TPE using 0 trials
-[2017-08-22 16:44:23,750] INFO: loading projection weights from ./data/glove.840B.300d.txt
-[2017-08-22 16:44:30,057] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt
-[2017-08-22 16:44:42,893] INFO: job exception: 'Embedding' object has no attribute 'postion_size'

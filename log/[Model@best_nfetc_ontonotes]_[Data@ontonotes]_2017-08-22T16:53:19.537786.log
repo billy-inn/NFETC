@@ -1,5 +1,0 @@
-[2017-08-22 16:53:19,547] INFO: tpe_transform took 0.001039 seconds
-[2017-08-22 16:53:19,547] INFO: TPE using 0 trials
-[2017-08-22 16:53:22,179] INFO: loading projection weights from ./data/glove.840B.300d.txt
-[2017-08-22 16:53:29,426] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt
-[2017-08-22 16:53:46,405] INFO: job exception: module 'config' has no attribute 'CHECKPOINT_DIR'

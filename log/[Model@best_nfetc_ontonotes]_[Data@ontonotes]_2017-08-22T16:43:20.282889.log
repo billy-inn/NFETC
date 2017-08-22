@@ -1,4 +1,0 @@
-[2017-08-22 16:43:20,291] INFO: tpe_transform took 0.000693 seconds
-[2017-08-22 16:43:20,292] INFO: TPE using 0 trials
-[2017-08-22 16:43:22,029] INFO: loading projection weights from ./data/glove.840B.300d.txt
-[2017-08-22 16:43:22,030] INFO: job exception: [Errno 2] No such file or directory: './data/glove.840B.300d.txt'

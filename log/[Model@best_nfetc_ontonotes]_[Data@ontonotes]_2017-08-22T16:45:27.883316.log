@@ -1,5 +1,0 @@
-[2017-08-22 16:45:27,890] INFO: tpe_transform took 0.000606 seconds
-[2017-08-22 16:45:27,890] INFO: TPE using 0 trials
-[2017-08-22 16:45:29,506] INFO: loading projection weights from ./data/glove.840B.300d.txt
-[2017-08-22 16:45:37,321] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt
-[2017-08-22 16:45:51,384] INFO: job exception: 'AttrDict' object has no attribute 'lr'
