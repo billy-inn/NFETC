@@ -1,0 +1,5 @@
+[2017-08-22 16:54:55,482] INFO: tpe_transform took 0.000735 seconds
+[2017-08-22 16:54:55,482] INFO: TPE using 0 trials
+[2017-08-22 16:54:57,120] INFO: loading projection weights from ./data/glove.840B.300d.txt
+[2017-08-22 16:55:03,492] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt
+[2017-08-22 16:55:20,423] INFO: job exception: name 'checkpoing_dir' is not defined

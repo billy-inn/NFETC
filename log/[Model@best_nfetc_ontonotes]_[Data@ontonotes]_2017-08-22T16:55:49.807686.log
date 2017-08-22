@@ -1,0 +1,19 @@
+[2017-08-22 16:55:49,816] INFO: tpe_transform took 0.000831 seconds
+[2017-08-22 16:55:49,816] INFO: TPE using 0 trials
+[2017-08-22 16:55:51,422] INFO: loading projection weights from ./data/glove.840B.300d.txt
+[2017-08-22 16:55:57,713] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt
+[2017-08-22 16:56:14,626] INFO: ==================================================
+[2017-08-22 16:56:14,627] INFO: Params
+[2017-08-22 16:56:14,627] INFO:       alpha: 0.0
+[2017-08-22 16:56:14,627] INFO:       batch_size: 512
+[2017-08-22 16:56:14,627] INFO:       dense_keep_prob: 0.5
+[2017-08-22 16:56:14,627] INFO:       hidden_layers: 0
+[2017-08-22 16:56:14,627] INFO:       hidden_size: 0
+[2017-08-22 16:56:14,627] INFO:       l2_reg_lambda: 0.0001
+[2017-08-22 16:56:14,627] INFO:       lr: 0.0002
+[2017-08-22 16:56:14,627] INFO:       num_epochs: 20
+[2017-08-22 16:56:14,627] INFO:       rnn_keep_prob: 0.5
+[2017-08-22 16:56:14,627] INFO:       state_size: 440
+[2017-08-22 16:56:14,627] INFO:       wpe_dim: 20
+[2017-08-22 16:56:14,627] INFO: Results
+[2017-08-22 16:56:14,627] INFO: 		Run		Step		Loss		PAcc			EAcc

@@ -1,0 +1,5 @@
+[2017-08-22 16:48:35,773] INFO: tpe_transform took 0.000629 seconds
+[2017-08-22 16:48:35,773] INFO: TPE using 0 trials
+[2017-08-22 16:48:37,546] INFO: loading projection weights from ./data/glove.840B.300d.txt
+[2017-08-22 16:48:44,320] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt
+[2017-08-22 16:48:57,806] INFO: job exception: name 'alpha' is not defined
