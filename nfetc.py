@@ -250,3 +250,14 @@ class NFETC(Model):
 			batch_predictions = sess.run(self.predictions, feed_dict=feed)
 			all_predictions = np.concatenate([all_predictions, batch_predictions])
 		return all_predictions
+
+	def evaluate(self, sess, train, test):
+		train_batches = data_utils.batch_iter(train, self.batch_size, self.num_epochs)
+		data_size = len(train)
+		num_batches_per_epoch = int((data_size-1)/self.batch_size) + 1
+		for batch in train_batches:
+			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, labels_batch = zip(*batch)
+			self.train_on_batch(sess, words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, labels_batch)
+			current_step = tf.train.global_step(sess, self.global_step)
+			if current_step % num_batches_per_epoch == 0:
+				yield self.predict(sess, test)

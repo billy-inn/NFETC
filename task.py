@@ -2,6 +2,7 @@ from model_param_space import ModelParamSpace
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials, space_eval
 from optparse import OptionParser
 from utils import logging_utils, data_utils, embedding_utils, pkl_utils
+from utils.eval_utils import strict, loose_macro, loose_micro, label_path, complete_path
 import numpy as np
 from sklearn.model_selection import ShuffleSplit
 import os
@@ -31,7 +32,7 @@ class Task:
 			num_types = len(type2id)
 			type_info = config.ONTONOTES_TYPE
 
-		id2type = {type2id[x]:x for x in type2id.keys()}
+		self.id2type = {type2id[x]:x for x in type2id.keys()}
 		def type2vec(types):
 			tmp = np.zeros(num_types)
 			for t in types.split():
@@ -66,6 +67,7 @@ class Task:
 		self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, labels_train))
 		self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, labels_valid))
 		self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, labels_test))
+		self.labels_test = labels_test
 
 		self.model_name = model_name
 		self.data_name = data_name
@@ -126,7 +128,7 @@ class Task:
 		self.logger.info("Params")
 		self._print_param_dict(self.params_dict)
 		self.logger.info("Results")
-		self.logger.info("\t\tRun\t\tStep\t\tLoss\t\tPAcc\t\t\tEAcc")
+		self.logger.info("\t\tRun\t\tStep\t\tLoss\t\tPAcc\t\tEAcc")
 
 		cv_loss = []
 		cv_pacc = []
@@ -149,6 +151,56 @@ class Task:
 		self.logger.info("CV Partial Accuracy: %.3f" % self.pacc)
 		self.logger.info("CV Exact Accuracy: %.3f" % self.eacc)
 		self.logger.info("-" * 50)
+
+	def get_scores(self, preds):
+		preds = [label_path(self.id2type[x]) for x in preds]
+		def vec2type(v):
+			s = []
+			for i in range(len(v)):
+				if v[i]:
+					s.extend(label_path(self.id2type[i]))
+			return set(s)
+		labels_test = [vec2type(x) for x in self.labels_test]
+		acc = strict(labels_test, preds)
+		_, _, macro = loose_macro(labels_test, preds)
+		_, _, micro = loose_micro(labels_test, preds)
+		return acc, macro, micro
+	
+	def refit(self):
+		self.logger.info("Evaluation for each epoch")
+		self.logger.info("\t\tEpoch\t\tAcc\t\tMacro\t\tMicro")
+
+		sess = self.create_session()
+		sess.run(tf.global_variables_initializer())
+		epochs = 0
+		for preds in self.model.evaluate(sess, self.train_set, self.test_set):
+			epochs += 1
+			acc, macro, micro = self.get_scores(preds)
+			self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" % (epochs, acc, macro, micro))
+		sess.close()
+
+	def evaluate(self):
+		self.logger.info("Final Evaluation")
+		self.logger.info("\t\tRun\t\tAcc\t\tMacro\t\tMicro")
+		accs = []
+		macros = []
+		micros = []
+		for i in range(self.cv_runs):
+			sess = self.create_session()
+			sess.run(tf.global_variables_initializer())
+			self.model.fit(sess, self.train_set)
+			preds = self.model.predict(sess, self.test_set)
+			acc, macro, micro = self.get_scores(preds)
+			accs.append(acc)
+			macros.append(macro)
+			micros.append(micro)
+		avg_acc = np.mean(accs)
+		avg_macro = np.mean(macros)
+		avg_micro = np.mean(micros)
+		for i in range(self.cv_runs):
+			self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" % (i+1, accs[i], macrosp[i], micros[i]))
+		print("-"*50)
+		print("Avg Acc %.3f Macro %.3f Micro %.3f" % (avg_acc, avg_macro, avg_micro))
 
 class TaskOptimizer:
 	def __init__(self, model_name, data_name, cv_runs, max_evals, logger):
