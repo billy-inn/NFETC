@@ -194,6 +194,7 @@ class Task:
 			accs.append(acc)
 			macros.append(macro)
 			micros.append(micro)
+			sess.close()
 		avg_acc = np.mean(accs)
 		avg_macro = np.mean(macros)
 		avg_micro = np.mean(micros)
@@ -201,6 +202,13 @@ class Task:
 			self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" % (i+1, accs[i], macrosp[i], micros[i]))
 		print("-"*50)
 		print("Avg Acc %.3f Macro %.3f Micro %.3f" % (avg_acc, avg_macro, avg_micro))
+	
+	def save(self):
+		sess = self.create_session()
+		sess.run(tf.global_variables_initializer())
+		self.model.fit(sess, self.train_set)
+		path = self.saver.save(sess, self.checkpoint_prefix)
+		print("Saved model to {}".format(path))
 
 class TaskOptimizer:
 	def __init__(self, model_name, data_name, cv_runs, max_evals, logger):
