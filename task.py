@@ -239,7 +239,7 @@ class TaskOptimizer:
 		self.logger.info("-"*50)
 		self.logger.info("Best Loss: %.3f\n with Parital Accuracy %.3f and Exact Accuracy %.3f" % (best_loss, best_pacc, best_eacc))
 		self.logger.info("Best Param:")
-		self._print_param_dict(best_params)
+		self.task._print_param_dict(best_params)
 		self.logger.info("-"*50)
 
 def parse_args(parser):
