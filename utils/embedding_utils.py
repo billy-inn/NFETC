@@ -1,8 +1,28 @@
 import numpy as np
 import gensim
+import json
 
 class Embedding:
-	def __init__(self, f, corpus, max_document_length, mention_size):
+	def __init__(self, vocab_size, embedding_dim, word2id, id2word, embedding,
+			max_document_length, position_size, mention_size):
+		self.vocab_size = vocab_size
+		self.embedding_dim = embedding_dim
+		self.word2id = word2id
+		self.id2word = id2word
+		self.embedding = embedding
+		self.max_document_length = max_document_length
+		self.position_size = position_size
+		self.mention_size = mention_size
+	
+	@classmethod
+	def restore(cls, inpath):
+		with open(inpath+"_args.json") as f:
+			kwargs = json.load(f)
+		embedding = np.load(inpath+"_embedding.npy")
+		return cls(embedding=embedding, **kwargs)
+	
+	@classmethod
+	def fromCorpus(cls, f, corpus, max_document_length, mention_size):
 		if ".txt" in f:
 			model = gensim.models.KeyedVectors.load_word2vec_format(f, binary=False)
 		else:
@@ -32,14 +52,16 @@ class Embedding:
 			id2word[i+2] = word
 			embedding[i+2, :] = model[word]
 
-		self.vocab_size = vocab_size + 2
-		self.embedding_dim = embedding_dim
-		self.word2id = word2id
-		self.id2word = id2word
-		self.embedding = embedding
-		self.max_document_length = max_document_length
-		self.position_size = self.max_document_length * 2 + 1
-		self.mention_size = mention_size
+		kwargs = {}
+		kwargs["vocab_size"] = vocab_size + 2
+		kwargs["embedding_dim"] = embedding_dim
+		kwargs["word2id"] = word2id
+		kwargs["id2word"] = id2word
+		kwargs["embedding"] = embedding
+		kwargs["max_document_length"] = max_document_length
+		kwargs["position_size"] = max_document_length * 2 + 1
+		kwargs["mention_size"] = mention_size
+		return cls(**kwargs)
 	
 	def _text_transform(self, s, maxlen):
 		if not isinstance(s, str):
@@ -89,3 +111,17 @@ class Embedding:
 				vec.append(0)
 		vec = [p+self.max_document_length for p in vec]
 		return vec
+
+	def save(self, outpath):
+		kwargs = {
+			"vocab_size": self.vocab_size,
+			"embedding_dim": self.embedding_dim,
+			"word2id": self.word2id,
+			"id2word": self.id2word,
+			"max_document_length": self.max_document_length,
+			"position_size": self.position_size,
+			"mention_size": self.mention_size,
+		}
+		with open(outpath+"_args.json", "w") as f:
+			json.dump(kwargs, f)
+		np.save(outpath+"_embedding.npy", self.embedding)

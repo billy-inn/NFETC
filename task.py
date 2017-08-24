@@ -41,7 +41,7 @@ class Task:
 		labels_train = np.array([type2vec(t) for t in labels_train])
 		labels = np.array([type2vec(t) for t in labels])
 
-		self.embedding = embedding_utils.Embedding(config.EMBEDDING_DATA, list(words_train)+list(words), config.MAX_DOCUMENT_LENGTH, config.MENTION_SIZE)
+		self.embedding = embedding_utils.Embedding.fromCorpus(config.EMBEDDING_DATA, list(words_train)+list(words), config.MAX_DOCUMENT_LENGTH, config.MENTION_SIZE)
 
 		print("Preprocessing data...")
 		textlen_train = np.array([self.embedding.len_transform1(x) for x in words_train])
@@ -208,6 +208,7 @@ class Task:
 		sess.run(tf.global_variables_initializer())
 		self.model.fit(sess, self.train_set)
 		path = self.saver.save(sess, self.checkpoint_prefix)
+		self.embedding.save(self.checkpoint_prefix)
 		print("Saved model to {}".format(path))
 
 class TaskOptimizer:

@@ -243,7 +243,6 @@ class NFETC(Model):
 	def predict(self, sess, test):
 		batches = data_utils.batch_iter(test, self.batch_size, 1, shuffle=False)
 		all_predictions = []
-		correct_predictions = 0.0
 		for batch in batches:
 			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, labels_batch = zip(*batch)
 			feed = self.create_feed_dict(words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch)

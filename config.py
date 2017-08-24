@@ -8,6 +8,7 @@ ONTONOTES_DATA_PATH = "%s/corpus/OntoNotes" % DATA_PATH
 
 LOG_DIR = "%s/log" % ROOT_PATH
 CHECKPOINT_DIR = "%s/checkpoint" % ROOT_PATH
+OUTPUT_DIR = "%s/output" % ROOT_PATH
 
 # -------------------- DATA ----------------------
 
