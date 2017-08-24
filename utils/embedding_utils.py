@@ -109,7 +109,7 @@ class Embedding:
 				vec.append(i-y)
 			else:
 				vec.append(0)
-		vec = [p+self.max_document_length for p in vec]
+		vec = [np.clip(p+self.max_document_length, 0, self.position_size-1) for p in vec]
 		return vec
 
 	def save(self, outpath):

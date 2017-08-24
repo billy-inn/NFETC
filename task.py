@@ -199,7 +199,7 @@ class Task:
 		avg_macro = np.mean(macros)
 		avg_micro = np.mean(micros)
 		for i in range(self.cv_runs):
-			self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" % (i+1, accs[i], macrosp[i], micros[i]))
+			self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" % (i+1, accs[i], macros[i], micros[i]))
 		print("-"*50)
 		print("Avg Acc %.3f Macro %.3f Micro %.3f" % (avg_acc, avg_macro, avg_micro))
 	
