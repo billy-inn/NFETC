@@ -200,8 +200,8 @@ class Task:
 		avg_micro = np.mean(micros)
 		for i in range(self.cv_runs):
 			self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" % (i+1, accs[i], macros[i], micros[i]))
-		print("-"*50)
-		print("Avg Acc %.3f Macro %.3f Micro %.3f" % (avg_acc, avg_macro, avg_micro))
+		self.logger.info("-"*50)
+		self.logger.info("Avg Acc %.3f Macro %.3f Micro %.3f" % (avg_acc, avg_macro, avg_micro))
 	
 	def save(self):
 		sess = self.create_session()
