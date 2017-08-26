@@ -69,6 +69,14 @@ def preprocess(data_name, if_clean=False):
 		clean_train_file = config.WIKI_TRAIN_CLEAN
 		clean_test_file = config.WIKI_TEST_CLEAN
 		type_file = config.WIKI_TYPE
+	elif data_name == "wikim":
+		raw_all_file = config.WIKIM_ALL
+		raw_train_file = config.WIKIM_TRAIN
+		raw_valid_file = config.WIKIM_VALID
+		raw_test_file = config.WIKIM_TEST
+		clean_train_file = config.WIKIM_TRAIN_CLEAN
+		clean_test_file = config.WIKIM_TEST_CLEAN
+		type_file = config.WIKIM_TYPE
 	elif data_name == "ontonotes":
 		raw_all_file = config.ONTONOTES_ALL
 		raw_train_file = config.ONTONOTES_TRAIN
