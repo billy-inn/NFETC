@@ -25,12 +25,18 @@ class Task:
 			type2id, typeDict = pkl_utils._load(config.WIKI_TYPE)
 			num_types = len(type2id)
 			type_info = config.WIKI_TYPE
-		else:
+		elif data_name == "ontonotes":
 			words_train, mentions_train, positions_train, labels_train = data_utils.load(config.ONTONOTES_TRAIN_CLEAN)
 			words, mentions, positions, labels = data_utils.load(config.ONTONOTES_TEST_CLEAN)
 			type2id, typeDict = pkl_utils._load(config.ONTONOTES_TYPE)
 			num_types = len(type2id)
 			type_info = config.ONTONOTES_TYPE
+		elif data_name == "wikim":
+			words_train, mentions_train, positions_train, labels_train = data_utils.load(config.WIKIM_TRAIN_CLEAN)
+			words, mentions, positions, labels = data_utils.load(config.WIKIM_TEST_CLEAN)
+			type2id, typeDict = pkl_utils._load(config.WIKIM_TYPE)
+			num_types = len(type2id)
+			type_info = config.WIKIM_TYPE
 
 		self.id2type = {type2id[x]:x for x in type2id.keys()}
 		def type2vec(types):
