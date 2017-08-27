@@ -158,7 +158,7 @@ class Task:
 		self.logger.info("CV Exact Accuracy: %.3f" % self.eacc)
 		self.logger.info("-" * 50)
 
-	def get_scores(self, preds):
+	def get_scores(self, preds, save=False):
 		preds = [label_path(self.id2type[x]) for x in preds]
 		def vec2type(v):
 			s = []
@@ -170,6 +170,15 @@ class Task:
 		acc = strict(labels_test, preds)
 		_, _, macro = loose_macro(labels_test, preds)
 		_, _, micro = loose_micro(labels_test, preds)
+
+		if save:
+			outfile = open(os.path.join(config.OUTPUT_DIR, self.__str__() + ".tsv", "w"))
+			for x, y in zip(preds, label_test):
+				t1 = "|".join(list(x))
+				t2 = "|".join(list(y))
+				outfile.write(t1 + "\t" + t2 + "\n")
+			outfile.close()
+
 		return acc, macro, micro
 	
 	def refit(self):
@@ -196,7 +205,7 @@ class Task:
 			sess.run(tf.global_variables_initializer())
 			self.model.fit(sess, self.train_set)
 			preds = self.model.predict(sess, self.test_set)
-			acc, macro, micro = self.get_scores(preds)
+			acc, macro, micro = self.get_scores(preds, True)
 			accs.append(acc)
 			macros.append(macro)
 			micros.append(micro)
