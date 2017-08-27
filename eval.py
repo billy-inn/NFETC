@@ -12,6 +12,7 @@ def parse_args(parser):
 	parser.add_option("-r", "--runs", dest="runs", type="int", default=5)
 	parser.add_option("-e", "--epoch", dest="epoch", default=False, action="store_true")
 	parser.add_option("-s", "--save", dest="save", default=False, action="store_true")
+	parser.add_option("-f", "--full", dest="full", default=False, action="store_true")
 	options, args = parser.parse_args()
 	return options, args
 
@@ -31,7 +32,7 @@ def main(options):
 		if options.epoch:
 			task.refit()
 		else:
-			task.evaluate()
+			task.evaluate(options.full)
 	
 
 if __name__ == "__main__":

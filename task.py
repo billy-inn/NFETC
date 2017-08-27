@@ -73,6 +73,7 @@ class Task:
 		self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, labels_train))
 		self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, labels_valid))
 		self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, labels_test))
+		self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, labels))
 		self.labels_test = labels_test
 
 		self.model_name = model_name
@@ -172,8 +173,8 @@ class Task:
 		_, _, micro = loose_micro(labels_test, preds)
 
 		if save:
-			outfile = open(os.path.join(config.OUTPUT_DIR, self.__str__() + ".tsv", "w"))
-			for x, y in zip(preds, label_test):
+			outfile = open(os.path.join(config.OUTPUT_DIR, self.__str__() + ".tsv"), "w")
+			for x, y in zip(preds, labels_test):
 				t1 = "|".join(list(x))
 				t2 = "|".join(list(y))
 				outfile.write(t1 + "\t" + t2 + "\n")
@@ -194,7 +195,7 @@ class Task:
 			self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" % (epochs, acc, macro, micro))
 		sess.close()
 
-	def evaluate(self):
+	def evaluate(self, full=False):
 		self.logger.info("Final Evaluation")
 		self.logger.info("\t\tRun\t\tAcc\t\tMacro\t\tMicro")
 		accs = []
@@ -204,8 +205,12 @@ class Task:
 			sess = self.create_session()
 			sess.run(tf.global_variables_initializer())
 			self.model.fit(sess, self.train_set)
-			preds = self.model.predict(sess, self.test_set)
-			acc, macro, micro = self.get_scores(preds, True)
+			if full:
+				preds = self.model.predict(sess, self.full_test_set)
+				acc, macro, micro = self.get_scores(preds, True)
+			else:
+				preds = self.model.predict(sess, self.test_set)
+				acc, macro, micro = self.get_scores(preds)
 			accs.append(acc)
 			macros.append(macro)
 			micros.append(micro)
