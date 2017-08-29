@@ -10,6 +10,7 @@ import config
 import datetime
 import tensorflow as tf
 from nfetc import NFETC
+from hs import HeterogeneousSupervision
 
 class AttrDict(dict):
 	def __init__(self, *args, **kwargs):
@@ -47,6 +48,12 @@ class Task:
 		labels_train = np.array([type2vec(t) for t in labels_train])
 		labels = np.array([type2vec(t) for t in labels])
 
+		lfs_all = np.load(config.WIKIM_LF)
+		func = np.vectorize(lambda x: type2id.get(x, -1))
+		lfs_all = func(lfs_all)
+		lfs_train = lfs_all[:labels_train.shape[0]]
+		lfs = lfs_all[labels_train.shape[0]:]
+
 		self.embedding = embedding_utils.Embedding.fromCorpus(config.EMBEDDING_DATA, list(words_train)+list(words), config.MAX_DOCUMENT_LENGTH, config.MENTION_SIZE)
 
 		print("Preprocessing data...")
@@ -69,12 +76,22 @@ class Task:
 			mentionlen_test, mentionlen_valid = mentionlen[test_index], mentionlen[valid_index]
 			mentions_test, mentions_valid = mentions[test_index], mentions[valid_index]
 			positions_test, positions_valid = positions[test_index], positions[valid_index]
+			lfs_test, lfs_valid = lfs[test_index], lfs[valid_index]
 			labels_test, labels_valid = labels[test_index], labels[valid_index]
-		self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, labels_train))
-		self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, labels_valid))
-		self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, labels_test))
-		self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, labels))
+
+		if "hs" not in model_name:
+			self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, labels_train))
+			self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, labels_valid))
+			self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, labels_test))
+			self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, labels))
+		else:
+			self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, lfs_train, labels_train))
+			self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, lfs_valid, labels_valid))
+			self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, lfs_test, labels_test))
+			self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, lfs, labels))
+
 		self.labels_test = labels_test
+		self.num_lfs = lfs.shape[1]
 
 		self.model_name = model_name
 		self.data_name = data_name
@@ -98,20 +115,23 @@ class Task:
 
 	def _get_model(self):
 		np.random.seed(config.RANDOM_SEED)
-		args = [
-			config.MAX_DOCUMENT_LENGTH,
-			config.MENTION_SIZE,
-			self.num_types,
-			self.embedding.vocab_size,
-			self.embedding.embedding_dim,
-			self.embedding.position_size,
-			self.embedding.embedding,
-			np.random.random_sample((self.embedding.position_size, self.hparams.wpe_dim)),
-			self.type_info,
-			self.hparams
-			]
+		kwargs = {
+			"sequence_length": config.MAX_DOCUMENT_LENGTH,
+			"mention_length": config.MENTION_SIZE,
+			"num_classes": self.num_types,
+			"vocab_size": self.embedding.vocab_size,
+			"embedding_size": self.embedding.embedding_dim,
+			"position_size": self.embedding.position_size,
+			"pretrained_embedding": self.embedding.embedding,
+			"wpe": np.random.random_sample((self.embedding.position_size, self.hparams.wpe_dim)),
+			"type_info": self.type_info,
+			"hparams": self.hparams
+		}
 		if "nfetc" in self.model_name:
-			return NFETC(*args)
+			return NFETC(**kwargs)
+		elif "hs" in self.model_name:
+			kwargs["num_lfs"] = self.num_lfs
+			return HeterogeneousSupervision(**kwargs)
 		else:
 			raise AttributeError("Invalid model name!")
 

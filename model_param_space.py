@@ -77,6 +77,7 @@ param_space_dict = {
 	"best_nfetc_wiki_hier": param_space_best_nfetc_wiki_hier,
 	"best_nfetc_ontonotes": param_space_best_nfetc_ontonotes,
 	"best_nfetc_ontonotes_hier": param_space_best_nfetc_ontonotes_hier,
+	"hs": param_space_nfetc,
 }
 
 int_params = [
