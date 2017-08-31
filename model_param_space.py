@@ -71,6 +71,20 @@ param_space_best_nfetc_ontonotes_hier = {
 	"alpha": 0.3,
 }
 
+param_space_best_hs = {
+	"wpe_dim": 85,
+	"lr": 0.0002,
+	"state_size": 180,
+	"hidden_layers": 0,
+	"hidden_size": 0,
+	"dense_keep_prob": 0.7,
+	"rnn_keep_prob": 0.9,
+	"l2_reg_lambda": 0.0000,
+	"batch_size": 512,
+	"num_epochs": 20,
+	"alpha": 0.3,
+}
+
 param_space_dict = {
 	"nfetc": param_space_nfetc,
 	"best_nfetc_wiki": param_space_best_nfetc_wiki,
@@ -78,6 +92,7 @@ param_space_dict = {
 	"best_nfetc_ontonotes": param_space_best_nfetc_ontonotes,
 	"best_nfetc_ontonotes_hier": param_space_best_nfetc_ontonotes_hier,
 	"hs": param_space_nfetc,
+	"best_hs": param_space_best_hs,
 }
 
 int_params = [

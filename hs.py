@@ -158,22 +158,22 @@ class HeterogeneousSupervision(Model):
 			self.adjusted_proba = tf.clip_by_value(self.adjusted_proba, 1e-10, 1.0)
 			self.predictions = tf.argmax(self.adjusted_proba, 1, name="predictions")
 
-		with tf.variable_scope("label"):
-			preds = tf.tile(tf.expand_dims(self.predictions, 1), [1, self.num_lfs])
+	def add_loss_op(self):
+		with tf.name_scope("loss"):
+			target = tf.argmax(tf.multiply(self.adjusted_proba, self.input_labels), axis=1)
+			target_index = tf.one_hot(target, self.num_classes)
+
+			preds = tf.tile(tf.expand_dims(target, 1), [1, self.num_lfs])
 			rho = tf.cast(tf.equal(self.lfs, preds), tf.float32)
 			W = tf.get_variable("W_l", shape=[self.feature_dim, self.num_lfs],
 					initializer=tf.contrib.layers.xavier_initializer(seed=config.RANDOM_SEED))
 			score = tf.nn.sigmoid(tf.matmul(self.features, W))
 			phi1 = 0.9
 			phi2 = 0.1
-			self.hs_loss = -tf.reduce_sum(tf.log(score*tf.pow(phi1, rho)*tf.pow(phi2, 1-rho) \
+			self.hs_loss = -tf.reduce_mean(tf.log(score*tf.pow(phi1, rho)*tf.pow(phi2, 1-rho) \
 					+ (1-score)*tf.pow(phi2, rho)*tf.pow(phi1, 1-rho)))
 
-	def add_loss_op(self):
-		with tf.name_scope("loss"):
-			target = tf.argmax(tf.multiply(self.adjusted_proba, self.input_labels), axis=1)
-			target_index = tf.one_hot(target, self.num_classes)
-			losses = tf.reduce_mean(-tf.reduce_sum(target_index*tf.log(self.adjusted_proba), 1))
+			losses = -tf.reduce_sum(target_index*tf.log(self.adjusted_proba), 1)
 			self.l2_loss = tf.contrib.layers.apply_regularization(regularizer=tf.contrib.layers.l2_regularizer(self.l2_reg_lambda), weights_list=tf.trainable_variables())
 			self.loss = tf.reduce_mean(losses) + self.hs_loss + self.l2_loss
 
