@@ -196,7 +196,8 @@ class HeterogeneousSupervision(Model):
 			self.hs_loss = tf.reduce_mean(losses)
 
 		with tf.name_scope("kl_loss"):
-			self.kl_loss = tf.reduce_mean(-tf.nn.softmax_cross_entropy_with_logits(labels=self.distribution, logits=self.distribution/self.adjusted_proba))
+			losses = -tf.reduce_sum(self.distribution*tf.log(self.distribution/self.adjusted_proba), 1)
+			self.kl_loss = tf.reduce_mean(losses)
 
 		with tf.name_scope("loss"):
 			self.l2_loss = tf.contrib.layers.apply_regularization(regularizer=tf.contrib.layers.l2_regularizer(self.l2_reg_lambda), weights_list=tf.trainable_variables())
