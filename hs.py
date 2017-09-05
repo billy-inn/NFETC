@@ -156,7 +156,7 @@ class HeterogeneousSupervision(Model):
 			self.proba = tf.nn.softmax(self.scores, name="proba")
 			self.adjusted_proba = tf.matmul(self.proba, self.tune)
 			self.adjusted_proba = tf.clip_by_value(self.adjusted_proba, 1e-10, 1.0)
-			self.adjusted_proba = tf.nn.softmax(self.adjusted_proba)
+			#self.adjusted_proba = tf.nn.softmax(self.adjusted_proba)
 			self.predictions = tf.argmax(self.adjusted_proba, 1, name="predictions")
 
 		with tf.variable_scope("lf_output"):
@@ -175,15 +175,16 @@ class HeterogeneousSupervision(Model):
 					* tf.pow(self.phi1, rho) * tf.pow(self.phi2, 1-rho) \
 					+ (1-proficient_scores) * tf.pow(self.phi2, rho) \
 					* tf.pow(self.phi1, 1-rho)), 1)
+			self.inferred_proba = tf.nn.softmax(losses, name="inferred_proba")
 			self.inferred_labels = tf.argmax(losses, axis=-1, name="inferred_labels")
 			self.distribution = tf.one_hot(self.inferred_labels, self.num_classes)
 
 	def add_loss_op(self):
-		with tf.name_scope("ce_loss"):
-			target = tf.argmax(tf.multiply(self.adjusted_proba, self.input_labels), axis=1)
-			target_index = tf.one_hot(target, self.num_classes)
-			losses = -tf.reduce_sum(target_index*tf.log(self.adjusted_proba), 1)
-			self.ce_loss = tf.reduce_mean(losses)
+		#with tf.name_scope("ce_loss"):
+		#	target = tf.argmax(tf.multiply(self.adjusted_proba, self.input_labels), axis=1)
+		#	target_index = tf.one_hot(target, self.num_classes)
+		#	losses = -tf.reduce_sum(target_index*tf.log(self.adjusted_proba), 1)
+		#	self.ce_loss = tf.reduce_mean(losses)
 
 		with tf.name_scope("hs_loss"):
 			preds = tf.tile(tf.expand_dims(self.inferred_labels, 1), [1, self.num_lfs])
@@ -195,13 +196,20 @@ class HeterogeneousSupervision(Model):
 					* tf.pow(self.phi1, 1-rho)), 1)
 			self.hs_loss = tf.reduce_mean(losses)
 
-		with tf.name_scope("kl_loss"):
-			losses = -tf.reduce_sum(self.distribution*tf.log(self.distribution/self.adjusted_proba), 1)
-			self.kl_loss = tf.reduce_mean(losses)
+		with tf.name_scope("ce_loss"):
+			target = tf.argmax(tf.multiply(self.inferred_proba, self.input_labels), axis=1)
+			target_index = tf.one_hot(target, self.num_classes)
+			losses = -tf.reduce_sum(target_index*tf.log(self.inferred_proba), 1)
+			self.ce_loss = tf.reduce_mean(losses)
+
+		#with tf.name_scope("kl_loss"):
+		#	losses = -tf.reduce_sum(self.distribution*tf.log(self.adjusted_proba), 1)
+		#	self.kl_loss = tf.reduce_mean(losses)
 
 		with tf.name_scope("loss"):
 			self.l2_loss = tf.contrib.layers.apply_regularization(regularizer=tf.contrib.layers.l2_regularizer(self.l2_reg_lambda), weights_list=tf.trainable_variables())
-			self.loss = self.ce_loss + self.hs_loss + self.kl_loss + self.l2_loss
+			#self.loss = self.ce_loss + self.hs_loss + self.kl_loss + self.l2_loss
+			self.loss = self.hs_loss + self.ce_loss + self.l2_loss
 
 		with tf.name_scope("results"): 
 			type_path = tf.nn.embedding_lookup(self.prior, self.predictions)

@@ -266,10 +266,10 @@ class TaskOptimizer:
 		self.task.cv()
 		tf.reset_default_graph()
 		ret = {
-			"loss": self.task.loss,
+			"loss": -self.task.eacc,
 			"attachments": {
 				"pacc": self.task.pacc,
-				"eacc": self.task.eacc,
+				#"eacc": self.task.eacc,
 			},
 			"status": STATUS_OK
 		}
@@ -282,11 +282,11 @@ class TaskOptimizer:
 		best_params = self.model_param_space._convert_into_param(best_params)
 		trial_loss = np.asarray(trials.losses(), dtype=float)
 		best_ind = np.argmin(trial_loss)
-		best_loss = trial_loss[best_ind]
+		best_loss = -trial_loss[best_ind]
 		best_pacc = trials.trial_attachments(trials.trials[best_ind])["pacc"]
-		best_eacc = trials.trial_attachments(trials.trials[best_ind])["eacc"]
+		#best_eacc = trials.trial_attachments(trials.trials[best_ind])["eacc"]
 		self.logger.info("-"*50)
-		self.logger.info("Best Loss: %.3f\n with Parital Accuracy %.3f and Exact Accuracy %.3f" % (best_loss, best_pacc, best_eacc))
+		self.logger.info("Best Exact Accuracy %.3f with Parital Accuracy %.3f" % (best_loss, best_pacc))
 		self.logger.info("Best Param:")
 		self.task._print_param_dict(best_params)
 		self.logger.info("-"*50)
