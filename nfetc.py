@@ -228,10 +228,10 @@ class NFETC(Model):
 			current_step = tf.train.global_step(sess, self.global_step)
 			if (current_step % num_batches_per_epoch == 0) and (dev is not None):
 				print("\nEvaluation:")
-				print("previous best dev epoch {}, best dev loss {:g}\n with partial acc {:g} and exact acc {:g}".format(best_dev_epoch, best_dev_loss, best_dev_pacc, best_dev_eacc))
+				print("previous best dev epoch {}, best exact acc {:g} with partial acc {:g}".format(best_dev_epoch, best_dev_eacc, best_dev_pacc))
 				loss, pacc, eacc = self.evaluation_on_dev(sess, dev)
 				print("")
-				if loss < best_dev_loss:
+				if eacc > best_dev_eacc:
 					best_dev_loss = loss
 					best_dev_pacc = pacc
 					best_dev_eacc = eacc

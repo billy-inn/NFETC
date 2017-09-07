@@ -147,23 +147,12 @@ class HeterogeneousSupervision(Model):
 		if self.hidden_layers == 0:
 			self.hidden_size = self.feature_dim
 
-		with tf.variable_scope("prob_output"):
-			W = tf.get_variable("W", shape=[self.hidden_size, self.num_classes],
-					initializer=tf.contrib.layers.xavier_initializer(seed=config.RANDOM_SEED))
-			b = tf.get_variable("b", shape=[self.num_classes],
-					initializer=tf.contrib.layers.xavier_initializer(seed=config.RANDOM_SEED))
-			self.scores = tf.nn.xw_plus_b(h_output, W, b, name="scores")
-			self.proba = tf.nn.softmax(self.scores, name="proba")
-			self.adjusted_proba = tf.matmul(self.proba, self.tune)
-			self.adjusted_proba = tf.clip_by_value(self.adjusted_proba, 1e-10, 1.0)
-			#self.adjusted_proba = tf.nn.softmax(self.adjusted_proba)
-			self.predictions = tf.argmax(self.adjusted_proba, 1, name="predictions")
-
 		with tf.variable_scope("lf_output"):
 			preds = tf.reshape(tf.range(self.num_classes), [1, 1, self.num_classes])
 			preds = tf.tile(preds, [tf.shape(self.features)[0], self.num_lfs, 1])
 			lfs = tf.tile(tf.expand_dims(self.lfs, -1), [1, 1, self.num_classes])
 			rho = tf.cast(tf.equal(lfs, preds), tf.float32)
+			mask = 1.0 - tf.cast(tf.equal(lfs, -1), tf.float32)
 
 			W = tf.get_variable("W", shape=[self.feature_dim, self.num_lfs],
 					initializer=tf.contrib.layers.xavier_initializer(seed=config.RANDOM_SEED))
@@ -171,36 +160,24 @@ class HeterogeneousSupervision(Model):
 			proficient_scores = tf.tile(tf.expand_dims(self.pscores, 2), [1, 1, self.num_classes])
 			self.phi1 = 0.9
 			self.phi2 = 0.1
-			losses = tf.reduce_sum(tf.log(proficient_scores \
+			losses = -tf.reduce_sum(tf.log(proficient_scores \
 					* tf.pow(self.phi1, rho) * tf.pow(self.phi2, 1-rho) \
 					+ (1-proficient_scores) * tf.pow(self.phi2, rho) \
-					* tf.pow(self.phi1, 1-rho)), 1)
-			self.inferred_proba = tf.nn.softmax(losses, name="inferred_proba")
-			self.inferred_labels = tf.argmax(losses, axis=-1, name="inferred_labels")
-			self.distribution = tf.one_hot(self.inferred_labels, self.num_classes)
+					* tf.pow(self.phi1, 1-rho))*mask, 1)*self.input_labels
+			self.inferred_labels = tf.argmin(losses, axis=-1, name="inferred_labels")
 
 	def add_loss_op(self):
-		#with tf.name_scope("ce_loss"):
-		#	target = tf.argmax(tf.multiply(self.adjusted_proba, self.input_labels), axis=1)
-		#	target_index = tf.one_hot(target, self.num_classes)
-		#	losses = -tf.reduce_sum(target_index*tf.log(self.adjusted_proba), 1)
-		#	self.ce_loss = tf.reduce_mean(losses)
-
 		with tf.name_scope("hs_loss"):
 			preds = tf.tile(tf.expand_dims(self.inferred_labels, 1), [1, self.num_lfs])
 			preds = tf.cast(preds, tf.int32)
 			rho = tf.cast(tf.equal(self.lfs, preds), tf.float32)
+			mask = 1.0 - tf.cast(tf.equal(self.lfs, -1), tf.float32)
+
 			losses = -tf.reduce_sum(tf.log(self.pscores \
 					* tf.pow(self.phi1, rho) * tf.pow(self.phi2, 1-rho) \
 					+ (1-self.pscores) * tf.pow(self.phi2, rho) \
-					* tf.pow(self.phi1, 1-rho)), 1)
+					* tf.pow(self.phi1, 1-rho))*mask, 1)
 			self.hs_loss = tf.reduce_mean(losses)
-
-		with tf.name_scope("ce_loss"):
-			target = tf.argmax(tf.multiply(self.inferred_proba, self.input_labels), axis=1)
-			target_index = tf.one_hot(target, self.num_classes)
-			losses = -tf.reduce_sum(target_index*tf.log(self.inferred_proba), 1)
-			self.ce_loss = tf.reduce_mean(losses)
 
 		#with tf.name_scope("kl_loss"):
 		#	losses = -tf.reduce_sum(self.distribution*tf.log(self.adjusted_proba), 1)
@@ -208,11 +185,10 @@ class HeterogeneousSupervision(Model):
 
 		with tf.name_scope("loss"):
 			self.l2_loss = tf.contrib.layers.apply_regularization(regularizer=tf.contrib.layers.l2_regularizer(self.l2_reg_lambda), weights_list=tf.trainable_variables())
-			#self.loss = self.ce_loss + self.hs_loss + self.kl_loss + self.l2_loss
-			self.loss = self.hs_loss + self.ce_loss + self.l2_loss
+			self.loss = self.hs_loss + self.l2_loss
 
 		with tf.name_scope("results"): 
-			type_path = tf.nn.embedding_lookup(self.prior, self.predictions)
+			type_path = tf.nn.embedding_lookup(self.prior, self.inferred_labels)
 			matched_types = tf.reduce_sum(tf.multiply(type_path, self.input_labels), axis=-1)
 			predicted_types = tf.reduce_sum(type_path, axis=-1)
 			label_types = tf.reduce_sum(self.input_labels, axis=-1)
@@ -269,10 +245,10 @@ class HeterogeneousSupervision(Model):
 			current_step = tf.train.global_step(sess, self.global_step)
 			if (current_step % num_batches_per_epoch == 0) and (dev is not None):
 				print("\nEvaluation:")
-				print("previous best dev epoch {}, best dev loss {:g}\n with partial acc {:g} and exact acc {:g}".format(best_dev_epoch, best_dev_loss, best_dev_pacc, best_dev_eacc))
+				print("previous best dev epoch {}, best exact acc {:g} with partial acc {:g}".format(best_dev_epoch, best_dev_eacc, best_dev_pacc))
 				loss, pacc, eacc = self.evaluation_on_dev(sess, dev)
 				print("")
-				if loss < best_dev_loss:
+				if eacc > best_dev_eacc:
 					best_dev_loss = loss
 					best_dev_pacc = pacc
 					best_dev_eacc = eacc
@@ -287,7 +263,7 @@ class HeterogeneousSupervision(Model):
 		for batch in batches:
 			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch = zip(*batch)
 			feed = self.create_feed_dict(words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch)
-			batch_predictions = sess.run(self.predictions, feed_dict=feed)
+			batch_predictions = sess.run(self.inferred_labels, feed_dict=feed)
 			all_predictions = np.concatenate([all_predictions, batch_predictions])
 		return all_predictions
 

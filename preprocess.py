@@ -180,7 +180,7 @@ def preprocess(data_name, if_clean=False):
 			if flag:
 				out_type.append(a)
 
-		outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(types)))
+		outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(out_type)))
 	outfile.close()
 
 def parse_args(parser):
