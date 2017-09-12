@@ -19,7 +19,7 @@ def path_count(types):
 		cnt += flag
 	return cnt
 
-def create_type_dict(infile, outfile):
+def create_type_dict(infile, outfile, full_path):
 	df = pd.read_csv(infile, sep="\t", names=["p1", "p2", "text", "type", "f"])
 	size = df.shape[0]
 	typeSet = set()
@@ -36,7 +36,10 @@ def create_type_dict(infile, outfile):
 					flag = False
 			if flag:
 				out_type.append(a)
-		typeSet.update(out_type)
+		if full_path:
+			typeSet.update(types)
+		else:
+			typeSet.update(out_type)
 		for t in types:
 			freq[t] += 1
 	
@@ -60,7 +63,7 @@ def clear_text(text):
 
 	return text.strip()
 
-def preprocess(data_name, if_clean=False):
+def preprocess(data_name, if_clean=False, full_path=False):
 	if data_name == "wiki":
 		raw_all_file = config.WIKI_ALL
 		raw_train_file = config.WIKI_TRAIN
@@ -89,7 +92,7 @@ def preprocess(data_name, if_clean=False):
 		raise AttributeError("Invalid data name!")
 		
 	if not os.path.exists(type_file):
-		create_type_dict(raw_all_file, type_file)
+		create_type_dict(raw_all_file, type_file, full_path)
 	type2id, typeDict = pkl_utils._load(type_file)
 
 	df_train = pd.read_csv(raw_train_file, sep="\t", names=["p1", "p2", "text", "type", "f"])
@@ -137,7 +140,10 @@ def preprocess(data_name, if_clean=False):
 				out_type.append(a)
 
 		if len(out_type) > 0:
-			outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(out_type)))
+			if full_path:
+				outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(types)))
+			else:
+				outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(out_type)))
 	outfile.close()
 
 	df = pd.read_csv(raw_test_file, sep="\t", names=["p1", "p2", "text", "type", "f"])
@@ -180,18 +186,22 @@ def preprocess(data_name, if_clean=False):
 			if flag:
 				out_type.append(a)
 
-		outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(out_type)))
+		if full_path:
+			outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(types)))
+		else:
+			outfile.write("%d\t%d\t%s\t%s\t%s\n" % (p1, p2, text, mention, " ".join(out_type)))
 	outfile.close()
 
 def parse_args(parser):
 	parser.add_option("-d", "--data_name", type="string", dest="data_name")
 	parser.add_option("-c", default=False, action="store_true", dest="if_clean")
+	parser.add_option("-f", default=False, action="store_true", dest="full_path")
 
 	(options, args) = parser.parse_args()
 	return options, args
 
 def main(options):
-	preprocess(options.data_name, options.if_clean)
+	preprocess(options.data_name, options.if_clean, options.full_path)
 
 if __name__ == "__main__":
 	parser = OptionParser()

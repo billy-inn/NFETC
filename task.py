@@ -54,6 +54,15 @@ class Task:
 		lfs_train = lfs_all[:labels_train.shape[0]]
 		lfs = lfs_all[labels_train.shape[0]:]
 
+		def transform(types):
+			tmp = np.zeros(num_types)
+			for t in types:
+				if t != -1:
+					tmp[t] = 1.0
+			return tmp
+		lf_labels_train = np.array([transform(t) for t in lfs_train])
+		lf_labels = np.array([transform(t) for t in lfs])
+
 		self.embedding = embedding_utils.Embedding.fromCorpus(config.EMBEDDING_DATA, list(words_train)+list(words), config.MAX_DOCUMENT_LENGTH, config.MENTION_SIZE)
 
 		print("Preprocessing data...")
@@ -77,6 +86,7 @@ class Task:
 			mentions_test, mentions_valid = mentions[test_index], mentions[valid_index]
 			positions_test, positions_valid = positions[test_index], positions[valid_index]
 			lfs_test, lfs_valid = lfs[test_index], lfs[valid_index]
+			lf_labels_test, lf_labels_valid = lf_labels[test_index], lf_labels[valid_index]
 			labels_test, labels_valid = labels[test_index], labels[valid_index]
 
 		if "hs" not in model_name:
@@ -85,12 +95,13 @@ class Task:
 			self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, labels_test))
 			self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, labels))
 		else:
-			self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, lfs_train, labels_train))
-			self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, lfs_valid, labels_valid))
-			self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, lfs_test, labels_test))
-			self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, lfs, labels))
+			self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, lfs_train, lf_labels_train, labels_train))
+			self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, lfs_valid, lf_labels_valid, labels_valid))
+			self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, lfs_test, lf_labels_test, labels_test))
+			self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, lfs, lf_labels, labels))
 
 		self.labels_test = labels_test
+		self.labels = labels
 		self.num_lfs = lfs.shape[1]
 
 		self.model_name = model_name
@@ -188,6 +199,8 @@ class Task:
 					s.extend(label_path(self.id2type[i]))
 			return set(s)
 		labels_test = [vec2type(x) for x in self.labels_test]
+		if save:
+			labels_test = [vec2type(x) for x in self.labels]
 		acc = strict(labels_test, preds)
 		_, _, macro = loose_macro(labels_test, preds)
 		_, _, micro = loose_micro(labels_test, preds)

@@ -1,0 +1,5 @@
+[2017-09-12 06:29:10,442] INFO: loading projection weights from ./data/glove.840B.300d.txt
+[2017-09-12 06:29:17,743] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt
+[2017-09-12 06:34:58,914] INFO: Scale of 0 disables regularizer.
+[2017-09-12 06:35:01,021] INFO: Evaluation for each epoch
+[2017-09-12 06:35:01,021] INFO: 		Epoch		Acc		Macro		Micro

@@ -42,6 +42,7 @@ class HeterogeneousSupervision(Model):
 		self.input_mentions = tf.placeholder(tf.int32, [None, self.mention_length], name="input_mentions")
 		self.input_mentionlen = tf.placeholder(tf.int32, [None], name="input_mentionlen")
 		self.input_positions = tf.placeholder(tf.int32, [None, self.sequence_length], name="input_positions")
+		self.input_lf_labels = tf.placeholder(tf.float32, [None, self.num_classes], name="input_lf_labels")
 		self.input_labels = tf.placeholder(tf.float32, [None, self.num_classes], name="input_labels")
 		self.lfs = tf.placeholder(tf.int32, [None, self.num_lfs], name="labeling_funcs")
 		self.phase = tf.placeholder(tf.bool, name="phase")
@@ -59,7 +60,7 @@ class HeterogeneousSupervision(Model):
 		self.mentionlen = tf.cast(tf.where(tf.not_equal(self.mentionlen, tf.zeros_like(self.mentionlen)), self.mentionlen, tf.ones_like(self.mentionlen)), tf.float32)
 		self.mentionlen = tf.expand_dims(self.mentionlen, 1)
 	
-	def create_feed_dict(self, input_words, input_textlen, input_mentions, input_mentionlen, input_positions, input_lfs, input_labels=None, phase=False, dense_dropout=1., rnn_dropout=1.):
+	def create_feed_dict(self, input_words, input_textlen, input_mentions, input_mentionlen, input_positions, input_lfs, input_lf_labels, input_labels=None, phase=False, dense_dropout=1., rnn_dropout=1.):
 		feed_dict = {
 				self.input_words: input_words,
 				self.input_textlen: input_textlen,
@@ -67,6 +68,7 @@ class HeterogeneousSupervision(Model):
 				self.input_mentionlen: input_mentionlen,
 				self.input_positions: input_positions,
 				self.lfs: input_lfs,
+				self.input_lf_labels: input_lf_labels,
 				self.phase: phase,
 				self.dense_dropout: dense_dropout,
 				self.rnn_dropout: rnn_dropout,
@@ -160,11 +162,11 @@ class HeterogeneousSupervision(Model):
 			proficient_scores = tf.tile(tf.expand_dims(self.pscores, 2), [1, 1, self.num_classes])
 			self.phi1 = 0.9
 			self.phi2 = 0.1
-			losses = -tf.reduce_sum(tf.log(proficient_scores \
+			losses = tf.reduce_sum(tf.log(proficient_scores \
 					* tf.pow(self.phi1, rho) * tf.pow(self.phi2, 1-rho) \
 					+ (1-proficient_scores) * tf.pow(self.phi2, rho) \
-					* tf.pow(self.phi1, 1-rho))*mask, 1)*self.input_labels
-			self.inferred_labels = tf.argmin(losses, axis=-1, name="inferred_labels")
+					* tf.pow(self.phi1, 1-rho))*mask, 1)
+			self.inferred_labels = tf.argmax(tf.minimum(losses, (2*self.input_lf_labels-1)*float('Inf')), axis=-1, name="inferred_labels")
 
 	def add_loss_op(self):
 		with tf.name_scope("hs_loss"):
@@ -194,7 +196,7 @@ class HeterogeneousSupervision(Model):
 			label_types = tf.reduce_sum(self.input_labels, axis=-1)
 
 			partial_equal = tf.cast(tf.greater(matched_types, 0.0), tf.float32)
-			exact_equal = tf.cast(tf.equal(matched_types, label_types), tf.float32)
+			exact_equal = tf.cast(tf.logical_and(tf.equal(matched_types, label_types), tf.equal(matched_types, predicted_types)), tf.float32)
 
 			self.partial_accuracy = tf.reduce_mean(partial_equal, name="partial_accuracy")
 			self.exact_accuracy = tf.reduce_mean(exact_equal, name="exact_accuracy")
@@ -207,8 +209,8 @@ class HeterogeneousSupervision(Model):
 		with tf.control_dependencies(extra_update_ops):
 			self.train_op = optimizer.apply_gradients(self.grads_and_vars, global_step=self.global_step)
 	
-	def train_on_batch(self, sess, input_words, input_textlen, input_mentions, input_mentionlen, input_positions, input_lfs, input_labels):
-		feed = self.create_feed_dict(input_words, input_textlen, input_mentions, input_mentionlen, input_positions, input_lfs, input_labels, True, self.dense_keep_prob, self.rnn_keep_prob)
+	def train_on_batch(self, sess, input_words, input_textlen, input_mentions, input_mentionlen, input_positions, input_lfs, input_lf_labels, input_labels):
+		feed = self.create_feed_dict(input_words, input_textlen, input_mentions, input_mentionlen, input_positions, input_lfs, input_lf_labels, input_labels, True, self.dense_keep_prob, self.rnn_keep_prob)
 		_, step, loss, pacc, eacc = sess.run([self.train_op, self.global_step, self.loss, self.partial_accuracy, self.exact_accuracy], feed_dict=feed)
 		time_str = datetime.datetime.now().isoformat()
 		print("{}: step {}, loss {:g} pacc {:g} eacc {:g}".format(time_str, step, loss, pacc, eacc))
@@ -220,8 +222,8 @@ class HeterogeneousSupervision(Model):
 		total_eacc = 0.0
 		total_len = 0
 		for batch in batches:
-			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch = zip(*batch)
-			feed = self.create_feed_dict(words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch)
+			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch, labels_batch = zip(*batch)
+			feed = self.create_feed_dict(words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch, labels_batch)
 			loss, pacc, eacc = sess.run([self.loss, self.partial_accuracy, self.exact_accuracy], feed_dict=feed)
 			total_loss += loss * len(labels_batch)
 			total_pacc += pacc * len(labels_batch)
@@ -240,8 +242,8 @@ class HeterogeneousSupervision(Model):
 		best_dev_loss = 1e10
 		best_dev_epoch = 0
 		for batch in train_batches:
-			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch = zip(*batch)
-			self.train_on_batch(sess, words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch)
+			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch, labels_batch = zip(*batch)
+			self.train_on_batch(sess, words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch, labels_batch)
 			current_step = tf.train.global_step(sess, self.global_step)
 			if (current_step % num_batches_per_epoch == 0) and (dev is not None):
 				print("\nEvaluation:")
@@ -261,8 +263,8 @@ class HeterogeneousSupervision(Model):
 		batches = data_utils.batch_iter(test, self.batch_size, 1, shuffle=False)
 		all_predictions = []
 		for batch in batches:
-			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch = zip(*batch)
-			feed = self.create_feed_dict(words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch)
+			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch, labels_batch = zip(*batch)
+			feed = self.create_feed_dict(words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch)
 			batch_predictions = sess.run(self.inferred_labels, feed_dict=feed)
 			all_predictions = np.concatenate([all_predictions, batch_predictions])
 		return all_predictions
@@ -272,8 +274,8 @@ class HeterogeneousSupervision(Model):
 		data_size = len(train)
 		num_batches_per_epoch = int((data_size-1)/self.batch_size) + 1
 		for batch in train_batches:
-			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch = zip(*batch)
-			self.train_on_batch(sess, words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, labels_batch)
+			words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch, labels_batch = zip(*batch)
+			self.train_on_batch(sess, words_batch, textlen_batch, mentions_batch, mentionlen_batch, positions_batch, lfs_batch, lf_labels_batch, labels_batch)
 			current_step = tf.train.global_step(sess, self.global_step)
 			if current_step % num_batches_per_epoch == 0:
 				yield self.predict(sess, test)
