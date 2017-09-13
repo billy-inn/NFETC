@@ -1,2 +1,0 @@
-[2017-09-12 06:17:31,822] INFO: loading projection weights from ./data/glove.840B.300d.txt
-[2017-09-12 06:17:38,402] INFO: loaded (22328, 300) matrix from ./data/glove.840B.300d.txt

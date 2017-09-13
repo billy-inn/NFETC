@@ -149,6 +149,17 @@ class HeterogeneousSupervision(Model):
 		if self.hidden_layers == 0:
 			self.hidden_size = self.feature_dim
 
+		with tf.variable_scope("ce_output"):
+			W = tf.get_variable("W", shape=[self.hidden_size, self.num_classes],
+					initializer=tf.contrib.layers.xavier_initializer(seed=config.RANDOM_SEED))
+			b = tf.get_variable("b", shape=[self.num_classes],
+					initializer=tf.contrib.layers.xavier_initializer(seed=config.RANDOM_SEED))
+			self.scores = tf.nn.xw_plus_b(h_output, W, b, name="scores")
+			self.proba = tf.nn.softmax(self.scores, name="proba")
+			self.adjusted_proba = tf.matmul(self.proba, self.tune)
+			self.adjusted_proba = tf.clip_by_value(self.adjusted_proba, 1e-10, 1.0)
+			self.predictions = tf.argmax(self.adjusted_proba, 1, name="predictions")
+
 		with tf.variable_scope("lf_output"):
 			preds = tf.reshape(tf.range(self.num_classes), [1, 1, self.num_classes])
 			preds = tf.tile(preds, [tf.shape(self.features)[0], self.num_lfs, 1])
@@ -169,6 +180,12 @@ class HeterogeneousSupervision(Model):
 			self.inferred_labels = tf.argmax(tf.minimum(losses, (2*self.input_lf_labels-1)*float('Inf')), axis=-1, name="inferred_labels")
 
 	def add_loss_op(self):
+		with tf.name_scope("ce_loss"):
+			target = tf.argmax(tf.multiply(self.adjusted_proba, self.input_labels), axis=1)
+			target_index = tf.one_hot(target, self.num_classes)
+			losses = tf.reduce_mean(-tf.reduce_sum(target_index*tf.log(self.adjusted_proba), 1))
+			self.ce_loss = tf.reduce_mean(losses)
+
 		with tf.name_scope("hs_loss"):
 			preds = tf.tile(tf.expand_dims(self.inferred_labels, 1), [1, self.num_lfs])
 			preds = tf.cast(preds, tf.int32)
@@ -181,19 +198,21 @@ class HeterogeneousSupervision(Model):
 					* tf.pow(self.phi1, 1-rho))*mask, 1)
 			self.hs_loss = tf.reduce_mean(losses)
 
-		#with tf.name_scope("kl_loss"):
-		#	losses = -tf.reduce_sum(self.distribution*tf.log(self.adjusted_proba), 1)
-		#	self.kl_loss = tf.reduce_mean(losses)
+		with tf.name_scope("kl_loss"):
+			target_index = tf.one_hot(self.inferred_labels, self.num_classes)
+			losses = -tf.reduce_sum(target_index*tf.log(self.adjusted_proba), 1)
+			self.kl_loss = tf.reduce_mean(losses)
 
 		with tf.name_scope("loss"):
 			self.l2_loss = tf.contrib.layers.apply_regularization(regularizer=tf.contrib.layers.l2_regularizer(self.l2_reg_lambda), weights_list=tf.trainable_variables())
-			self.loss = self.hs_loss + self.l2_loss
+			self.loss = self.ce_loss + self.hs_loss + self.kl_loss + self.l2_loss
 
 		with tf.name_scope("results"): 
 			type_path = tf.nn.embedding_lookup(self.prior, self.inferred_labels)
-			matched_types = tf.reduce_sum(tf.multiply(type_path, self.input_labels), axis=-1)
+			full_labels = tf.to_float(tf.cast(tf.matmul(self.input_labels, self.prior), tf.bool))
+			matched_types = tf.reduce_sum(tf.multiply(type_path, full_labels), axis=-1)
 			predicted_types = tf.reduce_sum(type_path, axis=-1)
-			label_types = tf.reduce_sum(self.input_labels, axis=-1)
+			label_types = tf.reduce_sum(full_labels, axis=-1)
 
 			partial_equal = tf.cast(tf.greater(matched_types, 0.0), tf.float32)
 			exact_equal = tf.cast(tf.logical_and(tf.equal(matched_types, label_types), tf.equal(matched_types, predicted_types)), tf.float32)
