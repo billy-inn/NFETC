@@ -216,6 +216,8 @@ class Task:
         return acc, macro, micro
 
     def refit(self):
+        self.logger.info("Params")
+        self._print_param_dict(self.params_dict)
         self.logger.info("Evaluation for each epoch")
         self.logger.info("\t\tEpoch\t\tAcc\t\tMacro\t\tMicro")
 
@@ -229,6 +231,8 @@ class Task:
         sess.close()
 
     def evaluate(self, full=False):
+        self.logger.info("Params")
+        self._print_param_dict(self.params_dict)
         self.logger.info("Final Evaluation")
         self.logger.info("\t\tRun\t\tAcc\t\tMacro\t\tMicro")
         accs = []
@@ -252,8 +256,8 @@ class Task:
         avg_macro = np.mean(macros)
         avg_micro = np.mean(micros)
         std_acc = np.std(accs)
-        std_macro = np.mean(macros)
-        std_micro = np.mean(micros)
+        std_macro = np.std(macros)
+        std_micro = np.std(micros)
         for i in range(self.cv_runs):
             self.logger.info("\t\t%d\t\t%.3f\t\t%.3f\t\t%.3f" %
                     (i + 1, accs[i], macros[i], micros[i]))
