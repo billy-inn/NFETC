@@ -69,7 +69,6 @@ class Task:
             mentionlen_test, mentionlen_valid = mentionlen[test_index], mentionlen[valid_index]
             mentions_test, mentions_valid = mentions[test_index], mentions[valid_index]
             positions_test, positions_valid = positions[test_index], positions[valid_index]
-            lf_labels_test, lf_labels_valid = lf_labels[test_index], lf_labels[valid_index]
             labels_test, labels_valid = labels[test_index], labels[valid_index]
 
         self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, labels_train))

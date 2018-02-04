@@ -1,4 +1,8 @@
-# NFETC: Neural Fine-grained Entity Type Classification with Hierarchy-Aware Loss
+# NFETC
+
+Neural Fine-grained Entity Type Classification with Hierarchy-Aware Loss
+
+Paper Published in NAACL 2018: [NFETC]()
 
 ### Prerequisites
 
@@ -43,3 +47,15 @@ Run `python eval.py -m <model_name> -d <data_name> -r <runs>`
 The scores for each run and the average scores are also recorded in one log file stored in folder `log`
 
 ### Cite
+
+If you found this codebase or our work useful, please cite:
+
+```
+@InProceddings{xu2018neural,
+  author = {Xu, Peng and Barbosa, Denilson},
+  title = {Neural Fine-grained Entity Type Classification with Hierarchy-Aware Loss},
+  booktitle = {NAACL},
+  year = {2018},
+  publisher = {ACL}
+}
+```
