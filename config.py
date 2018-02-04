@@ -40,8 +40,6 @@ WIKIM_TYPE = "%s/type.pkl" % WIKIM_DATA_PATH
 WIKIM_TRAIN_CLEAN = "%s/train_clean.tsv" % WIKIM_DATA_PATH
 WIKIM_TEST_CLEAN = "%s/test_clean.tsv" % WIKIM_DATA_PATH
 
-WIKIM_LF = "%s/lfs.npy" % WIKIM_DATA_PATH
-
 WIKI_MAPPING = "%s/wiki_mapping.txt" % DATA_PATH
 
 EMBEDDING_DATA = "%s/glove.840B.300d.txt" % DATA_PATH

@@ -4,7 +4,6 @@ from optparse import OptionParser
 from utils import pkl_utils, eval_utils
 import config
 from collections import defaultdict
-import re
 import os
 
 def path_count(types):
