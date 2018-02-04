@@ -5,3 +5,4 @@ utils/__pycache__/
 data/corpus/*
 data/wiki_modified/*
 data/glove*
+unfinished/*
