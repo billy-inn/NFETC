@@ -10,7 +10,6 @@ import config
 import datetime
 import tensorflow as tf
 from nfetc import NFETC
-from hs import HeterogeneousSupervision
 
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
@@ -48,21 +47,6 @@ class Task:
         labels_train = np.array([type2vec(t) for t in labels_train])
         labels = np.array([type2vec(t) for t in labels])
 
-        lfs_all = np.load(config.WIKIM_LF)
-        func = np.vectorize(lambda x: type2id.get(x, -1))
-        lfs_all = func(lfs_all)
-        lfs_train = lfs_all[:labels_train.shape[0]]
-        lfs = lfs_all[labels_train.shape[0]:]
-
-        def transform(types):
-            tmp = np.zeros(num_types)
-            for t in types:
-                if t != -1:
-                    tmp[t] = 1.0
-            return tmp
-        lf_labels_train = np.array([transform(t) for t in lfs_train])
-        lf_labels = np.array([transform(t) for t in lfs])
-
         self.embedding = embedding_utils.Embedding.fromCorpus(config.EMBEDDING_DATA, list(words_train)+list(words), config.MAX_DOCUMENT_LENGTH, config.MENTION_SIZE)
 
         print("Preprocessing data...")
@@ -85,24 +69,16 @@ class Task:
             mentionlen_test, mentionlen_valid = mentionlen[test_index], mentionlen[valid_index]
             mentions_test, mentions_valid = mentions[test_index], mentions[valid_index]
             positions_test, positions_valid = positions[test_index], positions[valid_index]
-            lfs_test, lfs_valid = lfs[test_index], lfs[valid_index]
             lf_labels_test, lf_labels_valid = lf_labels[test_index], lf_labels[valid_index]
             labels_test, labels_valid = labels[test_index], labels[valid_index]
 
-        if "hs" not in model_name:
-            self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, labels_train))
-            self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, labels_valid))
-            self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, labels_test))
-            self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, labels))
-        else:
-            self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, lfs_train, lf_labels_train, labels_train))
-            self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, lfs_valid, lf_labels_valid, labels_valid))
-            self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, lfs_test, lf_labels_test, labels_test))
-            self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, lfs, lf_labels, labels))
+        self.train_set = list(zip(words_train, textlen_train, mentions_train, mentionlen_train, positions_train, labels_train))
+        self.valid_set = list(zip(words_valid, textlen_valid, mentions_valid, mentionlen_valid, positions_valid, labels_valid))
+        self.test_set = list(zip(words_test, textlen_test, mentions_test, mentionlen_test, positions_test, labels_test))
+        self.full_test_set = list(zip(words, textlen, mentions, mentionlen, positions, labels))
 
         self.labels_test = labels_test
         self.labels = labels
-        self.num_lfs = lfs.shape[1]
 
         self.model_name = model_name
         self.data_name = data_name
@@ -140,9 +116,6 @@ class Task:
         }
         if "nfetc" in self.model_name:
             return NFETC(**kwargs)
-        elif "hs" in self.model_name:
-            kwargs["num_lfs"] = self.num_lfs
-            return HeterogeneousSupervision(**kwargs)
         else:
             raise AttributeError("Invalid model name!")
 
@@ -150,19 +123,19 @@ class Task:
         for k, v in sorted(d.items()):
             if isinstance(v, dict):
                 self.logger.info("%s%s:" % (prefix, k))
-                self.print_param_dict(v, prefix+incr_prefix, incr_prefix)
+                self.print_param_dict(v, prefix + incr_prefix, incr_prefix)
             else:
                 self.logger.info("%s%s: %s" % (prefix, k, v))
 
     def create_session(self):
         session_conf = tf.ConfigProto(
-                intra_op_parallelism_threads=8,
-                allow_soft_placement=True,
-                log_device_placement=False)
+            intra_op_parallelism_threads=8,
+            allow_soft_placement=True,
+            log_device_placement=False)
         return tf.Session(config=session_conf)
 
     def cv(self):
-        self.logger.info("="*50)
+        self.logger.info("=" * 50)
         self.logger.info("Params")
         self._print_param_dict(self.params_dict)
         self.logger.info("Results")
