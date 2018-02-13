@@ -150,6 +150,11 @@ class NFETC(Model):
                     initializer=tf.contrib.layers.xavier_initializer(seed=config.RANDOM_SEED))
             self.scores = tf.nn.xw_plus_b(h_output, W, b, name="scores")
             self.proba = tf.nn.softmax(self.scores, name="proba")
+
+            normed_W = tf.l2_normalize(W, axis=0)
+            sim_mat = tf.matmul(tf.matrix_transpose(normed_W), normed_W)
+            self.tune = self.tune * sim_mat
+
             self.adjusted_proba = tf.matmul(self.proba, self.tune)
             self.adjusted_proba = tf.clip_by_value(self.adjusted_proba, 1e-10, 1.0)
             self.predictions = tf.argmax(self.adjusted_proba, 1, name="predictions")
