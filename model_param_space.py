@@ -40,7 +40,7 @@ param_space_best_nfetc_wiki_hier = {
     "l2_reg_lambda": 0.0000,
     "batch_size": 512,
     "num_epochs": 20,
-    "alpha": 0.3,
+    "alpha": 0.4,
 }
 
 param_space_best_nfetc_ontonotes = {

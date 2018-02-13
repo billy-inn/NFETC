@@ -151,7 +151,7 @@ class NFETC(Model):
             self.scores = tf.nn.xw_plus_b(h_output, W, b, name="scores")
             self.proba = tf.nn.softmax(self.scores, name="proba")
 
-            normed_W = tf.l2_normalize(W, axis=0)
+            normed_W = tf.nn.l2_normalize(W, 0)
             sim_mat = tf.matmul(tf.matrix_transpose(normed_W), normed_W)
             self.tune = self.tune * sim_mat
 
@@ -165,7 +165,8 @@ class NFETC(Model):
             target_index = tf.one_hot(target, self.num_classes)
             losses = tf.reduce_mean(-tf.reduce_sum(target_index * tf.log(self.adjusted_proba), 1))
             self.l2_loss = tf.contrib.layers.apply_regularization(regularizer=tf.contrib.layers.l2_regularizer(self.l2_reg_lambda), weights_list=tf.trainable_variables())
-            self.loss = tf.reduce_mean(losses) + self.l2_loss
+            sim_loss = tf.reduce_sum(self.tune - tf.eye(self.num_classes))
+            self.loss = tf.reduce_mean(losses) + self.l2_loss + sim_loss
 
         with tf.name_scope("results"):
             type_path = tf.nn.embedding_lookup(self.prior, self.predictions)
