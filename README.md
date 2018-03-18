@@ -2,7 +2,7 @@
 
 Neural Fine-grained Entity Type Classification with Hierarchy-Aware Loss
 
-Paper Published in NAACL 2018: [NFETC]()
+Paper Published in NAACL 2018: [NFETC](https://arxiv.org/abs/1803.03378)
 
 ### Prerequisites
 
@@ -56,7 +56,7 @@ If you found this codebase or our work useful, please cite:
 ```
 @InProceddings{xu2018neural,
   author = {Xu, Peng and Barbosa, Denilson},
-  title = {Neural Fine-grained Entity Type Classification with Hierarchy-Aware Loss},
+  title = {Neural Fine-Grained Entity Type Classification with Hierarchy-Aware Loss},
   booktitle = {The 16th Annual Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies},
   moth = {June},
   year = {2018},
