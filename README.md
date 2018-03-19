@@ -57,8 +57,8 @@ If you found this codebase or our work useful, please cite:
 @InProceddings{xu2018neural,
   author = {Xu, Peng and Barbosa, Denilson},
   title = {Neural Fine-Grained Entity Type Classification with Hierarchy-Aware Loss},
-  booktitle = {The 16th Annual Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies},
-  moth = {June},
+  booktitle = {The 16th Annual Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL 2018)},
+  month = {June},
   year = {2018},
   publisher = {ACL}
 }
