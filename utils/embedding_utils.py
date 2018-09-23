@@ -38,10 +38,8 @@ class Embedding:
 		vocab_size = len(wordSet)
 		print("%d unique tokens have been found!" % vocab_size)
 		embedding_dim = model.syn0.shape[1]
-		word2id = {"<PAD>":0}
-		id2word = {0:"<PAD>"}
-		word2id = {"<UNK>":1}
-		id2word = {1:"<UNK>"}
+        word2id = {"<PAD>":0, "<UNK>":1}
+        id2word = {0:"<PAD>", 1:"<UNK>"}
 		embedding = np.zeros((vocab_size+2, embedding_dim))
 
 		np.random.seed(0)
