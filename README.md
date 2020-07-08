@@ -54,7 +54,7 @@ The scores for each run and the average scores are also recorded in one log file
 If you found this codebase or our work useful, please cite:
 
 ```
-@InProceddings{xu2018neural,
+@InProceedings{xu2018neural,
   author = {Xu, Peng and Barbosa, Denilson},
   title = {Neural Fine-Grained Entity Type Classification with Hierarchy-Aware Loss},
   booktitle = {The 16th Annual Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL 2018)},
